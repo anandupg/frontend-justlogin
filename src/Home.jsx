@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Home() {
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
@@ -11,7 +13,7 @@ export default function Home() {
       navigate('/');
       return;
     }
-    fetch('http://localhost:5000/api/home', {
+    fetch(`${API_URL}/api/home`, {
       headers: { 'Authorization': 'Bearer ' + token },
     })
       .then(res => {
