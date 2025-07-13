@@ -1,18 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_URL;
+  const location = useLocation();
+  const API_URL = 'http://localhost:5000'; // Use backend URL directly
+
+  const [logoutMsg, setLogoutMsg] = useState('');
 
   useEffect(() => {
-    if (localStorage.getItem('token')) {
-      navigate('/home');
+    if (location.state && location.state.logout) {
+      setLogoutMsg('You have been logged out successfully.');
+      // Clear the state so the message doesn't persist on next visit
+      window.history.replaceState({}, document.title);
     }
-  }, [navigate]);
+    fetch(`${API_URL}/api/home`, {
+      credentials: 'include',
+    })
+      .then(res => {
+        if (res.ok) navigate('/home');
+      });
+  }, [navigate, location.state]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,10 +33,11 @@ export default function Login() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
+        credentials: 'include', // Important for cookies!
       });
       const data = await res.json();
       if (res.ok) {
-        localStorage.setItem('token', data.token);
+        // localStorage.setItem('token', data.token); // No longer needed
         navigate('/home');
       } else {
         setError(data.message || 'Login failed');
@@ -38,6 +50,7 @@ export default function Login() {
   return (
     <div style={{ maxWidth: 400, margin: 'auto', padding: 20 }}>
       <h2>Login</h2>
+      {logoutMsg && <div style={{ color: 'green', marginBottom: 10 }}>{logoutMsg}</div>}
       <form onSubmit={handleSubmit}>
         <input
           type="text"

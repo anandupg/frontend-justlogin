@@ -1,36 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = 'http://localhost:5000'; // Use backend URL directly
 
 export default function Home() {
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/');
-      return;
-    }
     fetch(`${API_URL}/api/home`, {
-      headers: { 'Authorization': 'Bearer ' + token },
+      credentials: 'include', // Important for cookies!
     })
       .then(res => {
+        setLoading(false);
         if (res.status === 401 || res.status === 403) {
-          localStorage.removeItem('token');
           navigate('/');
+          return null;
         }
         return res.json();
       })
-      .then(data => setMessage(data.message))
-      .catch(() => setMessage('Error fetching message'));
+      .then(data => {
+        if (data && data.message) setMessage(data.message);
+      })
+      .catch(() => {
+        setLoading(false);
+        setMessage('Error fetching message');
+      });
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
+  const handleLogout = async () => {
+    await fetch(`${API_URL}/api/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    navigate('/', { state: { logout: true } });
   };
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div style={{ maxWidth: 400, margin: 'auto', padding: 20 }}>
